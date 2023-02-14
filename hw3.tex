@@ -1,0 +1,77 @@
+\documentclass[11pt]{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{color}
+\usepackage[margin=1in,nohead]{geometry}
+\usepackage[mathscr]{euscript}
+\usepackage{enumitem}
+\usepackage{url}
+
+\newcommand{\mc}{\mathcal}
+\newcommand{\mbf}{\mathbf}
+\newcommand{\mb}{\mathbb}
+\newcommand{\msc}{\mathscr}
+\newcommand{\goesto}{\rightarrow}
+\newcommand{\note}{{\bf Note: }}
+\newcommand{\vspan}{\text{span}}
+
+\newcommand{\R}{\mb{R}}
+\newcommand{\nat}{\mb{N}}
+
+\newcommand{\A}{\mathbf{A}}
+\newcommand{\B}{\mathbf{B}}
+\newcommand{\C}{\mathbf{C}}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\y}{\mathbf{y}}
+\newcommand{\z}{\mathbf{z}}
+\renewcommand{\b}{\mathbf{b}}
+\renewcommand{\u}{\mathbf{u}}
+\renewcommand{\v}{\mathbf{v}}
+\newcommand{\ones}{\mathbf{1}}
+\newcommand{\zero}{\mathbf{0}}
+
+\newcommand{\Eqn}[1]{\begin{align*} #1 \end{align*}}
+\newcommand{\bbm}{\begin{bmatrix}}
+\newcommand{\ebm}{\end{bmatrix}}
+\newcommand{\bpm}{\begin{pmatrix}}
+\newcommand{\epm}{\end{pmatrix}}
+
+\newcommand{\Sol}{\par {\bf Solution:}}
+\newcommand{\sample}[1]{#1_1 , \dots , #1_n}
+
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+\allowdisplaybreaks[4]
+
+\begin{document}
+
+\begin{center}
+\Large{
+\textbf{CSE 691, Spring 2023, Homework 3} \\
+Due: Wednesday, Feb 22, 2023. \\
+Shu Wan (1226038322)
+}
+\end{center}
+%\bigskip
+
+\section*{Spiders and Flies}
+Consider the spiders and flies problem of Example 1.6.4 with two differences:
+\begin{itemize}
+    \item The five flies stay still (rather than moving randomly)
+    \item There are only two spiders, both of which start at the fourth square from the right at the top row of the grid of Fig. 1.6.8
+\end{itemize}
+
+The base policy is to move each spider one square towards its nearest fly, with distance measured by the \emph{Manhattan metric}, and with preference given to a \emph{horizontal} direction over a \emph{vertical} direction in case of a tie. 
+
+Apply the \emph{multiagent rollout} algorithm of Section 1.6.5, and compare its performance with the one of the \emph{ordinary rollout} algorithm, and with the one of the \emph{base policy}. This problem is also discussed in Section 2.9.
+
+\Sol
+
+
+\newpage
+\section*{Appendix}
+
+\end{document}
