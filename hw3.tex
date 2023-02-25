@@ -9,6 +9,10 @@
 \usepackage[mathscr]{euscript}
 \usepackage{enumitem}
 \usepackage{url}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{listings}
 
 \newcommand{\mc}{\mathcal}
 \newcommand{\mbf}{\mathbf}
@@ -42,9 +46,20 @@
 \newcommand{\Sol}{\par {\bf Solution:}}
 \newcommand{\sample}[1]{#1_1 , \dots , #1_n}
 
+\DeclareMathOperator*{\argmin}{\arg\min}
+\DeclareMathOperator*{\argmax}{\arg\max}
+
 \setlength{\parskip}{6pt}
 \setlength{\parindent}{0pt}
 \allowdisplaybreaks[4]
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  frame=single,
+  breaklines=true,
+  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+}
+
 
 \begin{document}
 
@@ -68,10 +83,107 @@ The base policy is to move each spider one square towards its nearest fly, with 
 
 Apply the \emph{multiagent rollout} algorithm of Section 1.6.5, and compare its performance with the one of the \emph{ordinary rollout} algorithm, and with the one of the \emph{base policy}. This problem is also discussed in Section 2.9.
 
-\Sol
+\section*{Solution}
 
+\subsection*{Formulation}
+Because all flies stay still, spiders will eventually capture all flies. Hence, we can treat this problem as a deterministic finite horizon dynamic programming. To this end, we follow the formulations in 1.2, define the problem in following way:
+\begin{enumerate}
+    \item $k$: Stage/Time, starting from 0.
+    \item $x_k$: State at stage $k$. State is represented by a matrix, recording spiders/flies locations ($x, y$) and life status.
+    \begin{table}[h]
+    \centering
+\begin{tabular}{lccc}
+\hline
+   & \textbf{x} & \textbf{y} & \textbf{status} \\ \hline
+S1 & 7          & 1          & 1               \\
+S2 & 7          & 1          & 1               \\
+F1 & 9          & 3          & 1               \\
+F2 & 3          & 4          & 1               \\
+F3 & 5          & 7          & 1               \\
+F4 & 2          & 8          & 1               \\
+F5 & 9          & 9          & 1      \\
+\hline
+\end{tabular}
+\caption{Initial stage $x_0$.}
+\end{table}
+
+    \item $\boldsymbol u = \{u_1, u_2\}, u_i \in \{1, 2, 3, 4, 5\}$: Control sets for 2 spiders, can be extended to $m$ agents. Each spider has 5 movement options, (\emph{LEFT, RIGHT, UP, DOWN, STAY}), denoted from 1 to 5. The index also represents the control preference, where 1 has the highest priority, that is \emph{horizontal} over \emph{vertical}, \emph{move} over \emph{stay}.
+    \item $g(x, \boldsymbol u), ~g = \text{number of steps} + 1, ~g_0 \equiv 0$: Cost function at a stage. The cost at a stage is the sum of total spider steps (including \emph{STAY}) plus 1, indicating that 1 stage has passed.
+    \item $J_k(x, \boldsymbol u) = \sum _k^N g_k(x, \boldsymbol u)$: Cost-to-go function from stage $k$ to all flies terminated. $N$ depends on the specific policy.
+    \item $f(x, \boldsymbol u)$: System equation, update spiders locations and update flies life status.
+    \item $\pi = (\sample{\boldsymbol u})$: Policy.
+\end{enumerate}
+
+\subsection*{Three DP algorithms}
+Three DP policies are implemented and compared to showcase the power of multi-agent rollout algorithms. We start with a greedy base policy, and build standard rollout and multi-agent rollout algorithms with the base policy.
+
+
+\begin{itemize}
+    \item \textbf{Base policy}
+
+    The base policy is a greedy algorithm. Each spider moves toward the closest fly, the move priority is given by the move index in case of a tie. The decision is greedy at the individual, there's no cooperation between spiders. In our case, since two spiders have the same spawn location, the nearest fly is always the same for both flies. Therefore, they will travel together till all flies are eliminated. The base policy generates policy $\hat \pi = (\sample{\hat{\boldsymbol u}})$ directly without optimization process. Thus, it provides an upper bound for the other two policies.
+    \item \textbf{Standard rollout}
+    
+    The standard rollout considers all possible movements for all agents. This grows exponentially as the number of agents increase. In this problem, we only have 2 spiders, so at each stage, 25 controls need to be computed at most. Among all permissible controls, the one with minimum cost-to-go values is picked as the optimal control.
+    \[
+    \boldsymbol u_k^*(x_k) = \argmin_{\boldsymbol u_k(x_k)} J_k(x_k, \boldsymbol u_k) = \argmin_{\boldsymbol u_k(x_k)} \{g(x_k, \boldsymbol u_k) + J_{k+1}(f(x_k, \boldsymbol u_k))\}
+    \]
+    \item \textbf{Multi-agent rollout}
+
+    Multi-agent rollout is similar to standard rollout with the goal to save computation overhead due to the control sets explosion. To acheive this, multi-agent rollout first assign default movements to all agents using the base policy. Then perform following sequence of minimization,
+    \begin{align*}
+    \tilde u_1(x_k) &= \argmin_{\boldsymbol u_k(x_k)} J_k(x_k, u_1) \\
+    &= \argmin_{\boldsymbol u_k(x_k)} \{g(x_k, u_1(x_k), \hat u_2(x_k)) + J_{k+1}(f(x_k, u_1(x_k), \hat u_2(x_k)))\}, \\
+    \tilde u_2(x_k) &= \argmin_{\boldsymbol u_k(x_k)} J_k(x_k, u_1, u_2)\\
+    &= \argmin_{\boldsymbol u_k(x_k)} \{g(x_k, \tilde u_1(x_k), u_2(x_k)) + J_{k+1}(f(x_k, \tilde u_1(x_k), u_2(x_k)))\}.
+    \end{align*}
+    The first agent selects the best move $\tilde u_1$ assuming the other agents take default moves. Then, the second agent selects its best move with the first agent move picked earlier.
+    Multi-agent rollout algorithm saves control sets computations for more than 50\% (25 to 10).
+    
+\end{itemize}
+
+\subsection*{Implementation}
+
+For details, please refer the demo video and the source code (\ref{code}).
+
+\subsection*{Evaluation}
+We evaluate three algorithms by comparing their stage length, total cost, average steps per stage, and runtime statistics. We see that both standard rollout and multi-agent rollout outperform the base policy by a large margin in cost statistics. Specifically, both rollout variants finish the game eight stages earlier than the base policy, with a more than 40\% reduction in costs. However, we also observed a significant jump in runtime in rollout variants. In this regard, the multi-agent rollout runtime is about 50\% of the standard rollout, which is proportional to the reduction in control sets.
+\begin{table}[h]
+\centering
+\begin{tabular}{cccc}
+\hline
+\textbf{Policy}              & \textbf{\#Stages} & \textbf{Total Costs} & \textbf{\begin{tabular}[c]{@{}c@{}}Average steps\\ per stage\end{tabular}} \\ \hline
+Base Policy              & 26               & 75                   & 2                                                                          \\
+Standard Rollout   & 18               & 43                   & 1.53                                                                        \\
+Multi-agent Rollout & 18               & 43                   & 1.53 \\                  
+\hline
+\end{tabular}
+\caption{Policy statistics.}
+\end{table}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccccccc}
+\hline
+\textbf{Policy}              & \textbf{Min} & \textbf{\begin{tabular}[c]{@{}c@{}}Lower \\ Quantile\end{tabular}} & \textbf{Mean} & \textbf{Median} & \textbf{\begin{tabular}[c]{@{}c@{}}Upper \\ Quantile\end{tabular}} & \textbf{Max} \\ \hline
+Base  Policy              & 3.35         & 3.40                                                               & 3.85          & 3.46            & 3.62                                                               & 7.79         \\
+Standard Rollout    & 497.12       & 503.93                                                             & 513.97        & 507.65          & 512.77                                                             & 604.32       \\
+Multi-agent Rollout & 211.90       & 214.21                                                             & 219.07        & 215.89          & 217.86                                                             & 313.53      \\
+\hline
+\end{tabular}
+\caption{Runtime statistics for 100 runs. Time in milliseconds.}
+\end{table}
+
+\subsection*{Conclusion}
+In this problem, the multi-agent rollout algorithm achieves the same results as the standard rollout while saving more than 50\% runtime. Even though there’s no guarantee that the multi-agent rollout performance will work as well as the standard rollout, similar performance is expected while its huge save in computation costs is appreciated. There are still a lot improvements and modifications can explroe in the future:
+\begin{enumerate}
+    \item Parallel multi-agent implementation using signaling.
+    \item Deal with stochastic infinite horizon DP. For example, allow spies move randomly.
+\end{enumerate}
 
 \newpage
 \section*{Appendix}
+
+\lstinputlisting[language=R, label=code, caption={Source code}]{code/hw3.R}
 
 \end{document}
