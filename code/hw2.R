@@ -52,27 +52,33 @@ reward <- function(x, t) {
 plot_value <- function(space, title = "") {
   space %>%
     ggplot(aes(time, state)) +
-    geom_tile(aes(fill = reachable), color = "black", linewidth = .5, show.legend = F) +
-    geom_text(aes(label = round(value, 3)), color = "white", fontface = "bold") +
+    geom_tile(aes(fill = reachable), color = "black", 
+    linewidth = .5, show.legend = F) +
+    geom_text(aes(label = round(value, 3)), color = "white", 
+    fontface = "bold") +
     theme_minimal() +
     scale_x_continuous(breaks = 0:n) +
     scale_y_continuous(breaks = 0:xbar) +
     scale_fill_manual(values = c("#FFFFFF", "#808080")) +
     labs(title = title, x = "Time", y = "State (Price)") +
-    theme(panel.grid = element_blank(), plot.title = element_text(face = "bold", hjust = .5))
+    theme(panel.grid = element_blank(), 
+    plot.title = element_text(face = "bold", hjust = .5))
 }
 plot_policy <- function(space, title = "") {
   space %>%
     ggplot(aes(time, state)) +
-    geom_tile(aes(fill = reachable), color = "black", linewidth = .1, show.legend = F) +
-    geom_text(aes(label = policy, color = policy), fontface = "bold", show.legend = F) +
+    geom_tile(aes(fill = reachable), color = "black", 
+    linewidth = .1, show.legend = F) +
+    geom_text(aes(label = policy, color = policy), 
+    fontface = "bold", show.legend = F) +
     theme_minimal() +
     scale_x_continuous(breaks = 0:n) +
     scale_y_continuous(breaks = 0:xbar) +
     scale_fill_manual(values = c("#FFFFFF", "#808080")) +
     scale_color_manual(values = c("#FFFFFF", "#FFC627")) +
     labs(title = title, x = "Time", y = "State (Price)") +
-    theme(panel.grid = element_blank(), plot.title = element_text(face = "bold", hjust = .5))
+    theme(panel.grid = element_blank(), 
+    plot.title = element_text(face = "bold", hjust = .5))
 }
 
 #' Base heuristic algorithm
@@ -82,7 +88,8 @@ plot_policy <- function(space, title = "") {
 #' @param xk referencing state
 #' @return expected reward-to-go J_k^k
 base_heuristic <- function(x, t, xk = x) {
-  stopifnot(x == clamp(x), xk == clamp(xk)) # stop if x and xk are out of boundary
+  # stop if x and xk are out of boundary
+  stopifnot(x == clamp(x), xk == clamp(xk))
   stopifnot(t <= n)
 
   if (t == n) {
@@ -217,7 +224,8 @@ ggsave("parta2.png")
 
 # part(b): base heuristic
 spaceb <- space %>%
-  mutate(value = ifelse(reachable, map2_dbl(state, time, base_heuristic, xk = x0), NA)) %>%
+  mutate(value = ifelse(reachable, 
+  map2_dbl(state, time, base_heuristic, xk = x0), NA)) %>%
   mutate(policy = ifelse(ifelse(reachable, state == value, NA), "Sell", "Keep"))
 
 plot_value(spaceb, "Expected Reward-to-go (Base heuristic)")
